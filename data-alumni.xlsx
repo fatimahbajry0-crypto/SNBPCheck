@@ -1,0 +1,235 @@
+// =====================================
+// SNBP CHECK - GOOGLE APPS SCRIPT
+// =====================================
+
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('SNBP CHECK - Cek Peluang SNBP')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+// DATA ALUMNI 2024-2026
+const DATA_ALUMNI = {
+  2024: 30,
+  2025: 32,
+  2026: 20
+};
+
+// DATA TOP PTN BERDASARKAN REKAP ALUMNI
+const DATA_KAMPUS = [
+  {
+    nama: 'Universitas Padjadjaran',
+    singkatan: 'UNPAD',
+    jumlah: 18,
+    lokasi: 'Jatinangor dan Bandung',
+    bidang: 'Hukum, Ekonomi, Kedokteran, Komunikasi',
+    website: 'https://www.unpad.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'Universitas Pendidikan Indonesia',
+    singkatan: 'UPI',
+    jumlah: 14,
+    lokasi: 'Bandung',
+    bidang: 'Pendidikan, Ekonomi, Olahraga, Teknologi',
+    website: 'https://www.upi.edu/',
+    foto: ''
+  },
+  {
+    nama: 'Institut Teknologi Bandung',
+    singkatan: 'ITB',
+    jumlah: 11,
+    lokasi: 'Bandung dan Cirebon',
+    bidang: 'Teknik, Sains, Teknologi, Seni dan Desain',
+    website: 'https://www.itb.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'IPB University',
+    singkatan: 'IPB',
+    jumlah: 9,
+    lokasi: 'Bogor',
+    bidang: 'Pertanian, Peternakan, Pangan, Bisnis',
+    website: 'https://www.ipb.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'Universitas Diponegoro',
+    singkatan: 'UNDIP',
+    jumlah: 7,
+    lokasi: 'Semarang',
+    bidang: 'Hukum, Ekonomi, Teknik dan Kesehatan',
+    website: 'https://undip.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'Universitas Negeri Semarang',
+    singkatan: 'UNNES',
+    jumlah: 5,
+    lokasi: 'Semarang',
+    bidang: 'Pendidikan, Ekonomi, Olahraga dan Sains',
+    website: 'https://unnes.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'Politeknik Negeri Bandung',
+    singkatan: 'POLBAN',
+    jumlah: 5,
+    lokasi: 'Bandung Barat',
+    bidang: 'Teknik, Akuntansi dan Administrasi Bisnis',
+    website: 'https://www.polban.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'Universitas Singaperbangsa Karawang',
+    singkatan: 'UNSIKA',
+    jumlah: 3,
+    lokasi: 'Karawang',
+    bidang: 'Hukum, Ekonomi, Pendidikan dan Teknik',
+    website: 'https://www.unsika.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'Universitas Brawijaya',
+    singkatan: 'UB',
+    jumlah: 2,
+    lokasi: 'Malang',
+    bidang: 'Ekonomi, Hukum, Pertanian dan Teknik',
+    website: 'https://www.ub.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'Institut Teknologi Sepuluh Nopember',
+    singkatan: 'ITS',
+    jumlah: 2,
+    lokasi: 'Surabaya',
+    bidang: 'Teknik, Teknologi, Sains dan Desain',
+    website: 'https://www.its.ac.id/',
+    foto: ''
+  },
+  {
+    nama: 'Universitas Gadjah Mada',
+    singkatan: 'UGM',
+    jumlah: 2,
+    lokasi: 'Yogyakarta',
+    bidang: 'Kedokteran, Hukum, Ekonomi dan Teknik',
+    website: 'https://ugm.ac.id/',
+    foto: ''
+  }
+];
+
+// MENGIRIM DATA KE WEBSITE
+function getDashboardData() {
+  return {
+    alumni: DATA_ALUMNI,
+    total: 82,
+    kampus: DATA_KAMPUS,
+    sekolah: 'SMAN 1 Purwakarta'
+  };
+}
+
+// ANALISIS NILAI RAPOR
+function analyzePrediction(data) {
+
+  const nilai = [
+    Number(data.semester1),
+    Number(data.semester2),
+    Number(data.semester3),
+    Number(data.semester4),
+    Number(data.semester5)
+  ];
+
+  if (nilai.some(n => !Number.isFinite(n) || n < 0 || n > 100)) {
+    throw new Error('Nilai semester harus berada di antara 0 sampai 100.');
+  }
+
+  const rataRata = nilai.reduce((a, b) => a + b, 0) / 5;
+
+  let kategori = '';
+  let keterangan = '';
+
+  if (rataRata >= 90) {
+    kategori = 'Nilai akademik tinggi';
+    keterangan = 'Nilai rapor kamu tergolong tinggi. Tetap perhatikan peringkat eligible, prestasi, dan persaingan program studi.';
+  } else if (rataRata >= 85) {
+    kategori = 'Nilai akademik cukup kompetitif';
+    keterangan = 'Nilai rapor kamu dapat menjadi modal untuk menyusun pilihan program studi secara strategis.';
+  } else if (rataRata >= 80) {
+    kategori = 'Perlu strategi pemilihan';
+    keterangan = 'Pertimbangkan kesesuaian nilai mata pelajaran pendukung dan data penerimaan alumni.';
+  } else {
+    kategori = 'Perlu evaluasi akademik';
+    keterangan = 'Evaluasi nilai rapor dan konsultasikan strategi pilihan dengan guru BK.';
+  }
+
+  let posisi = 'Belum diisi';
+
+  const peringkat = Number(data.peringkat);
+  const jumlahEligible = Number(data.jumlahEligible);
+
+  if (
+    Number.isInteger(peringkat) &&
+    Number.isInteger(jumlahEligible) &&
+    peringkat > 0 &&
+    jumlahEligible > 0 &&
+    peringkat <= jumlahEligible
+  ) {
+    const rasio = peringkat / jumlahEligible;
+
+    if (rasio <= 0.2) {
+      posisi = '20% teratas siswa eligible';
+    } else if (rasio <= 0.5) {
+      posisi = 'Di luar 20% teratas';
+    } else {
+      posisi = 'Bagian bawah kelompok eligible';
+    }
+  }
+
+  return {
+    rataRata: rataRata.toFixed(2),
+    kategori: kategori,
+    keterangan: keterangan,
+    posisi: posisi,
+    pilihan1: data.pilihan1 || '-',
+    pilihan2: data.pilihan2 || '-'
+  };
+}
+
+// MENYIMPAN HASIL SIMULASI KE GOOGLE SHEETS
+// Hanya dilakukan jika siswa menyetujui penyimpanan.
+function savePrediction(data) {
+
+  const result = analyzePrediction(data);
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  let sheet = ss.getSheetByName('DATA SIMULASI');
+
+  if (!sheet) {
+    sheet = ss.insertSheet('DATA SIMULASI');
+
+    sheet.appendRow([
+      'Waktu',
+      'Tahun Seleksi',
+      'Rata-rata Rapor',
+      'Peringkat Eligible',
+      'Jumlah Eligible',
+      'Kategori Nilai',
+      'Pilihan 1',
+      'Pilihan 2'
+    ]);
+  }
+
+  sheet.appendRow([
+    new Date(),
+    data.tahun || '',
+    result.rataRata,
+    data.peringkat || '',
+    data.jumlahEligible || '',
+    result.kategori,
+    result.pilihan1,
+    result.pilihan2
+  ]);
+
+  return 'Data simulasi berhasil disimpan.';
+}
